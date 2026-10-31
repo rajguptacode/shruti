@@ -1,5 +1,5 @@
 /* Shruti service worker — offline app shell, no note data leaves the browser. */
-const VERSION = 'shruti-v1.0.0';
+const VERSION = 'shruti-v1.0.1';
 const CORE_CACHE = `${VERSION}-core`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 

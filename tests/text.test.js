@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   parseNote, splitSentences, detectLanguage, cleanInline,
   extractTitle, previewText, estimateSentenceMinutes, countWords,
-  stripLeadingHeading
+  stripLeadingTitle
 } from '../js/text.js';
 
 test('detects English, Hindi and Hinglish', () => {
@@ -54,11 +54,15 @@ test('extracts a useful title', () => {
   assert.ok(extractTitle('A '.repeat(80)).length <= 82);
 });
 
-test('removes the leading title heading without emptying the note', () => {
-  assert.equal(stripLeadingHeading('# Photosynthesis\n\nDetails here.'), 'Details here.');
-  assert.equal(stripLeadingHeading('\n\n## Chapter 1\nFirst point.'), 'First point.');
-  assert.equal(stripLeadingHeading('No heading\n\nBody text.'), 'No heading\n\nBody text.');
-  assert.equal(stripLeadingHeading('# Only a heading'), '# Only a heading');
+test('removes the leading title without emptying the note', () => {
+  assert.equal(stripLeadingTitle('# Photosynthesis\n\nDetails here.'), 'Details here.');
+  assert.equal(stripLeadingTitle('\n\n## Chapter 1\nFirst point.'), 'First point.');
+  assert.equal(stripLeadingTitle('Photosynthesis\n\nDetails here.'), 'Details here.');
+  assert.equal(stripLeadingTitle('**Photosynthesis**\n\nDetails here.'), 'Details here.');
+  assert.equal(stripLeadingTitle('# Only a heading'), '# Only a heading');
+  assert.equal(stripLeadingTitle('Photosynthesis is important.\n\nMore details.'), 'Photosynthesis is important.\n\nMore details.');
+  assert.equal(stripLeadingTitle('Title\nNo blank line.'), 'Title\nNo blank line.');
+  assert.equal(stripLeadingTitle('- A bullet\n\nBody text.'), '- A bullet\n\nBody text.');
 });
 
 test('builds a short preview', () => {

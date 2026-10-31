@@ -176,7 +176,7 @@ shruti/
 
 ## How it works
 
-1. Pasted text is normalised, cleaned of markdown noise and split into sentences. A leading markdown heading becomes the note title and is removed from the reading body.
+1. Pasted text is normalised, cleaned of markdown noise and split into sentences. A leading markdown heading or standalone title line becomes the note title and is removed from the reading body.
 2. Sentences are rendered as clickable spans and fed to a small `SpeechPlayer` wrapper.
 3. The player speaks one sentence at a time with `speechSynthesis`, then advances. It handles pause/resume, seeking, looping, rate changes and browser quirks.
 4. Notes and settings are written to `localStorage` under the `shruti.v1.*` prefix.

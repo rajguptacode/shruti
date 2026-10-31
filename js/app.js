@@ -1,7 +1,7 @@
 /** Shruti — paste notes, listen, remember. */
 import {
   parseNote, detectLanguage, languageLabel, speechLocale,
-  estimateSentenceMinutes, extractTitle, countWords, stripLeadingHeading
+  estimateSentenceMinutes, extractTitle, countWords, stripLeadingTitle
 } from './text.js';
 import * as store from './store.js';
 import {
@@ -112,6 +112,7 @@ const els = {
   importSettings: $('#import-settings'),
   deleteAll: $('#delete-all'),
   installRow: $('#install-row'),
+  iosInstall: $('#ios-install'),
   installBtn: $('#install-btn'),
   editDialog: $('#edit-dialog'),
   editTitleInput: $('#edit-title-input'),
@@ -419,7 +420,13 @@ function applyVoiceList(voices) {
 function testVoice() {
   if (!isSupported()) { toast('This browser does not support speech.'); return; }
   if (state.player.playing) { toast('Pause the note first, then test a voice.'); return; }
-  if (!state.voices.length) { toast('No device voices found yet. Open your system text-to-speech settings and install a voice.'); return; }
+  if (!state.voices.length) {
+    toast('No device voices found yet. Install a voice in your system text-to-speech settings.', {
+      duration: 9000,
+      action: { label: 'Voice settings', onClick: () => openSettings('voice-section') }
+    });
+    return;
+  }
   const lang = effectiveLang();
   const text = SPEECH_SAMPLES[lang] || SPEECH_SAMPLES.en;
   if (!state.player.testVoice(text)) toast('Could not start the voice test.');
@@ -450,7 +457,7 @@ function updateComposeHint() {
     return;
   }
 
-  const parsed = state.composeParsed || parseNote(stripLeadingHeading(text));
+  const parsed = state.composeParsed || parseNote(stripLeadingTitle(text));
   const lang = state.composeLang === 'auto' ? parsed.lang : state.composeLang;
   const minutes = estimateSentenceMinutes(parsed.sentences);
   const detected = state.composeLang === 'auto' ? `Detected ${languageLabel(parsed.lang)} · ` : '';
@@ -462,7 +469,7 @@ function scheduleComposeParse() {
   clearTimeout(state.composeTimer);
   state.composeTimer = setTimeout(() => {
     const text = els.composeText.value;
-    state.composeParsed = text.trim() ? parseNote(stripLeadingHeading(text)) : null;
+    state.composeParsed = text.trim() ? parseNote(stripLeadingTitle(text)) : null;
     updateComposeHint();
   }, 180);
 }
@@ -508,7 +515,7 @@ function showComposer({ restoreDraft = true } = {}) {
       setComposeLang(draft.lang || 'auto');
     }
   }
-  state.composeParsed = els.composeText.value.trim() ? parseNote(stripLeadingHeading(els.composeText.value)) : null;
+  state.composeParsed = els.composeText.value.trim() ? parseNote(stripLeadingTitle(els.composeText.value)) : null;
   updateComposeHint();
   els.mainScroll.scrollTop = 0;
 }
@@ -517,7 +524,7 @@ function createNote() {
   const rawText = els.composeText.value.trim();
   if (!rawText) return;
   const title = extractTitle(rawText);
-  const text = stripLeadingHeading(rawText);
+  const text = stripLeadingTitle(rawText);
   const parsed = parseNote(text);
   if (!parsed.sentences.length) {
     toast('There is no readable text here yet.');
@@ -627,7 +634,7 @@ function openNote(id, { play = false, scroll = 'saved' } = {}) {
 
   const previousId = state.note?.id;
   if (previousId && previousId !== id) state.player.stop();
-  const preparedText = stripLeadingHeading(note.text);
+  const preparedText = stripLeadingTitle(note.text);
   if (preparedText !== note.text) {
     note.text = preparedText;
     try { store.saveNote(note, { touch: false }); } catch (error) {}
@@ -822,7 +829,7 @@ function saveEdit() {
     els.editText.focus();
     return;
   }
-  const text = stripLeadingHeading(rawText);
+  const text = stripLeadingTitle(rawText);
   const title = els.editTitleInput.value.trim() || extractTitle(rawText);
   const requested = $('input[name="edit-lang"]:checked')?.value || 'auto';
   const parsed = parseNote(text);
@@ -1125,6 +1132,7 @@ function closeSidebar() {
 
 /* ---------- settings, import, export ---------- */
 function openSettings(sectionId = '') {
+  closeSidebar();
   syncSettingsUI();
   if (!els.settingsDialog.open) {
     els.settingsDialog.showModal();
@@ -1145,6 +1153,7 @@ function closeAllDialogs() {
 }
 
 function downloadBackup() {
+  closeSidebar();
   if (!state.index.length) { toast('There are no notes to back up yet.'); return; }
   const payload = store.exportBackup();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1161,6 +1170,7 @@ function downloadBackup() {
 }
 
 function triggerImport() {
+  closeSidebar();
   els.importFile.value = '';
   els.importFile.click();
 }
@@ -1217,7 +1227,10 @@ function deleteAllNotes() {
 
 function updateInstallUI() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   els.installRow.hidden = standalone || !state.installPrompt;
+  els.iosInstall.hidden = standalone || !ios || Boolean(state.installPrompt);
 }
 
 async function installApp() {
@@ -1304,7 +1317,7 @@ function bindEvents() {
       if (!sample) return;
       els.composeText.value = sample.text;
       setComposeLang(sample.lang);
-      state.composeParsed = parseNote(stripLeadingHeading(sample.text));
+      state.composeParsed = parseNote(stripLeadingTitle(sample.text));
       updateComposeHint();
       store.saveDraft({ text: sample.text, lang: sample.lang });
       els.composeText.focus({ preventScroll: true });
@@ -1537,7 +1550,14 @@ function attachPlayerEvents() {
     }
   });
   player.on('error', (event) => {
-    toast(event?.message || 'Could not play audio.');
+    const message = event?.message || 'Could not play audio.';
+    const voiceIssue = /voice|speech|text-to-speech/i.test(message);
+    toast(message, {
+      duration: voiceIssue ? 9000 : 4200,
+      action: voiceIssue
+        ? { label: 'Voice settings', onClick: () => openSettings('voice-section') }
+        : undefined
+    });
   });
 }
 

@@ -172,7 +172,7 @@ kbd {
 .app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); height: 100dvh; }
 .sidebar {
   display: flex; flex-direction: column; min-height: 0; padding: 22px 18px 16px;
-  background: var(--sidebar-bg); border-right: 1px solid var(--line); z-index: 30;
+  background: var(--sidebar-bg); border-right: 1px solid var(--line); z-index: 100;
 }
 .main { display: flex; flex-direction: column; min-width: 0; height: 100dvh; position: relative; }
 .main__scroll {
@@ -551,6 +551,8 @@ body:not(.has-note) .read-progress { opacity: 0; }
 .button-row .btn { min-height: 36px; font-size: 12px; }
 .install-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .install-row .hint { margin: 0; }
+.install-hint { margin-top: 10px; }
+.install-hint strong { color: var(--ink-soft); font-weight: 600; }
 .about { color: var(--faint); font-size: 11px; line-height: 1.65; padding-top: 16px; border-top: 1px solid var(--line); margin-top: 6px; }
 .field-label { display: block; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin: 14px 0 6px; }
 .field-label:first-child { margin-top: 8px; }

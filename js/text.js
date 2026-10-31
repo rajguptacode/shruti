@@ -265,14 +265,31 @@ export function extractTitle(value, fallback = 'Untitled note') {
 }
 
 /**
- * Drop the first markdown heading, which usually becomes the note title.
- * If the heading is the whole note, keep it so the note is never empty.
+ * Drop the leading title, which becomes the note title, so the reader does not
+ * repeat it. Handles a markdown heading or a standalone first line.
+ * If the title is the whole note, keep it so the note is never empty.
  */
-export function stripLeadingHeading(value) {
+export function stripLeadingTitle(value) {
   const text = normalizeText(value);
-  const match = text.match(/^\s*#{1,6}[ \t]+[^\n]+(?:\n|$)/);
-  if (!match) return text;
-  const rest = text.slice(match[0].length).replace(/^\s*\n/, '').trim();
+  const heading = text.match(/^\s*#{1,6}[ \t]+[^\n]+(?:\n|$)/);
+  if (heading) {
+    const rest = text.slice(heading[0].length).replace(/^\s*\n/, '').trim();
+    return rest || text;
+  }
+
+  const firstLine = text.match(/^\s*([^\n]+)\n/);
+  if (!firstLine) return text;
+  const after = text.slice(firstLine[0].length);
+  if (!/^\s*\n/.test(after)) return text;
+
+  const rawLine = firstLine[1].trim();
+  if (!rawLine || /^[-*+]\s+/.test(rawLine) || /^\d{1,3}[.)]\s+/.test(rawLine)) return text;
+
+  const line = cleanInline(rawLine);
+  if (!line || line.length > 100 || line.split(/\s+/).length > 14) return text;
+  if (/[.!?।॥]$/.test(line)) return text;
+
+  const rest = after.replace(/^\s*\n/, '').trim();
   return rest || text;
 }
 
