@@ -6,7 +6,7 @@ Shruti is a free, private, browser-based study app for Class 10 revision. Paste 
 
 No account. No API key. No server. Everything runs in your browser and your notes stay on your device.
 
-- **Live app:** add your GitHub Pages link here after deployment
+- **Live app:** <https://rajguptacode.github.io/shruti/>
 - **Stack:** plain HTML, CSS and JavaScript — no build step
 - **Speech:** the browser's built-in Web Speech API
 - **Storage:** `localStorage` on your device
